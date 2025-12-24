@@ -1,7 +1,7 @@
 {
   "name": "bulk-ban-checker",
   "version": "1.0.0",
-  "description": "WhatsApp-Telegram Bulk Ban Checker using Xeon Socket",
+  "description": "WhatsApp-Telegram Bulk Ban Checker with Uptime Ping",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,9 +10,10 @@
     "@whiskeysockets/baileys": "npm:dgxeon-soket@^4.0.0",
     "node-telegram-bot-api": "^0.64.0",
     "qrcode-terminal": "^0.12.0",
-    "pino": "^8.16.0"
+    "pino": "^8.16.0",
+    "express": "^4.18.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   }
 }
