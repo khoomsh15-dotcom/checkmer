@@ -1,0 +1,18 @@
+{
+  "name": "bulk-ban-checker",
+  "version": "1.0.0",
+  "description": "WhatsApp-Telegram Bulk Ban Checker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
+    "node-telegram-bot-api": "^0.64.0",
+    "qrcode-terminal": "^0.12.0",
+    "pino": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
