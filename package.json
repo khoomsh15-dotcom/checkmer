@@ -1,13 +1,13 @@
 {
   "name": "bulk-ban-checker",
   "version": "1.0.0",
-  "description": "WhatsApp-Telegram Bulk Ban Checker",
+  "description": "WhatsApp-Telegram Bulk Ban Checker using Xeon Socket",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.6.0",
+    "@whiskeysockets/baileys": "npm:dgxeon-soket@^4.0.0",
     "node-telegram-bot-api": "^0.64.0",
     "qrcode-terminal": "^0.12.0",
     "pino": "^8.16.0"
