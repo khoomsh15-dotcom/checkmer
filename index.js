@@ -1,21 +1,13 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, Browsers } = require("@whiskeysockets/baileys");
 const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
 const express = require('express');
 
-// --- 1. EXPRESS SERVER FOR UPTIME ---
 const app = express();
 const port = process.env.PORT || 10000;
+app.get('/', (req, res) => res.send('Bot Active'));
+app.listen(port);
 
-app.get('/', (req, res) => {
-    res.send('Bot is Online! Uptime Monitor is active.');
-});
-
-app.listen(port, () => {
-    console.log(`Web server running on port ${port}`);
-});
-
-// --- 2. BOT LOGIC ---
 const TG_TOKEN = process.env.TG_TOKEN;
 const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 
@@ -25,7 +17,9 @@ async function startBot() {
     const sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
-        printQRInTerminal: true
+        // 1. IMPROVED BROWSER HEADERS: This mimics a real Chrome session better
+        browser: Browsers.macOS('Desktop'), 
+        syncFullHistory: false
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -34,38 +28,49 @@ async function startBot() {
         const chatId = msg.chat.id;
         const numbers = match[1].split(',').map(n => n.trim().replace(/[^0-9]/g, ''));
 
-        if (numbers.length === 0) return tgBot.sendMessage(chatId, "❌ No valid numbers.");
-
-        tgBot.sendMessage(chatId, `🔍 Xeon Engine: Checking ${numbers.length} numbers...`);
+        tgBot.sendMessage(chatId, `🚀 Xeon Engine v4: Checking ${numbers.length} numbers...`);
 
         for (const num of numbers) {
             try {
-                // Xeon's custom ban checker
+                // 2. THE CHECK: Using the Xeon custom function
                 const result = await sock.xeonBanChecker(num);
                 const res = JSON.parse(result);
 
                 let status = "";
+                let details = "";
+
                 if (res.isBanned) {
-                    status = `🚫 *BANNED*\nViolation: ${res.data?.violation_type || 'Unknown'}`;
+                    status = "🚫 *BANNED*";
+                    details = `\n⚠️ Violation: ${res.data?.violation_type || 'Spam/Third-Party'}\n🛠️ Appealable: ${res.data?.in_app_ban_appeal ? 'Yes' : 'No'}`;
                 } else if (res.isNeedOfficialWa) {
-                    status = `🔒 *RESTRICTED* (Needs Official WA)`;
+                    // This often happens if the CHECKER account is low quality or the number is flagged
+                    status = "🔒 *RESTRICTED*";
+                    details = "\n⚠️ Warning: Needs Official WhatsApp for verification.";
                 } else {
-                    status = `✅ *CLEAN*`;
+                    status = "✅ *CLEAN*";
+                    details = "\n🎉 This number is safe to use.";
                 }
 
-                await tgBot.sendMessage(chatId, `📞 +${num}\nStatus: ${status}`, { parse_mode: 'Markdown' });
+                await tgBot.sendMessage(chatId, `📞 *Number:* +${num}\n*Status:* ${status}${details}`, { parse_mode: 'Markdown' });
 
             } catch (e) {
-                await tgBot.sendMessage(chatId, `⚠️ +${num}: Error in Xeon Check.`);
-                console.error(e);
+                // 3. FALLBACK: If Xeon function fails, use standard check
+                try {
+                    const [exists] = await sock.onWhatsApp(num);
+                    if (exists) {
+                        await tgBot.sendMessage(chatId, `📞 +${num}\nStatus: ✅ *CLEAN* (Standard Check)`);
+                    } else {
+                        await tgBot.sendMessage(chatId, `📞 +${num}\nStatus: ❌ *NOT ON WA / BANNED*`);
+                    }
+                } catch (err) {
+                    await tgBot.sendMessage(chatId, `⚠️ +${num}: System Busy/Blocked.`);
+                }
             }
-            // 2s delay to prevent rate limits
-            await new Promise(r => setTimeout(r, 2000));
+            // INCREASE DELAY: 2025 security is sensitive. 4 seconds is safer for bulk.
+            await new Promise(r => setTimeout(r, 4000));
         }
-        tgBot.sendMessage(chatId, "✅ Bulk check finished.");
+        tgBot.sendMessage(chatId, "🏁 Bulk check sequence finished.");
     });
-
-    console.log("Xeon Ban Checker Bot with Web Server is Live!");
 }
 
 startBot();
